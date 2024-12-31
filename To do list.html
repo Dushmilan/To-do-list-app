@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Scheduler</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f7f7f7;
+            color: #333;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #444;
+        }
+
+        #clock {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input[type="text"] {
+            width: 80%;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        li {
+            background: #fff;
+            margin: 10px 0;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        li span {
+            font-size: 16px;
+            color: #333;
+        }
+
+        li button {
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: #ff4d4d;
+            border: none;
+            border-radius: 5px;
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        li button:hover {
+            background-color: #cc0000;
+        }
+
+        .dropdown-calendar, .time-picker, .repeat-option {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .time-picker select, .repeat-option select {
+            width: 80px;
+        }
+        .repeat-option{
+            font-size:40px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Scheduler</h1>
+    <div id="clock"></div>
+    <h2>Add a New Task</h2>
+    <input type="text" id="taskInput" placeholder="Enter your task">
+    <div class="dropdown-calendar">
+        <select id="yearSelect"></select>
+        <select id="monthSelect"></select>
+        <select id="daySelect"></select>
+    </div>
+    <div class="time-picker">
+        <select id="hourSelect"></select> :
+        <select id="minuteSelect"></select>
+    </div>
+    <div class="repeat-option">
+        <label for="repeatSelect">Repeat:</label>
+        <select id="repeatSelect">
+            <option value="once">Once</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+        </select>
+    </div>
+    <button onclick="addTask()">Add Task</button>
+
+    <h2>Scheduled Tasks</h2>
+    <ul id="taskList">
+        <!-- Tasks will appear here -->
+    </ul>
+
+    <script>
+        // Populate year, month, and day dropdowns
+        const yearSelect = document.getElementById('yearSelect');
+        const monthSelect = document.getElementById('monthSelect');
+        const daySelect = document.getElementById('daySelect');
+        const hourSelect = document.getElementById('hourSelect');
+        const minuteSelect = document.getElementById('minuteSelect');
+
+        function populateYears() {
+            const currentYear = new Date().getFullYear();
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) option.selected = true;
+                yearSelect.appendChild(option);
+            }
+        }
+
+        function populateMonths() {
+            const monthNames = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+            monthNames.forEach((month, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = month;
+                if (index === new Date().getMonth()) option.selected = true;
+                monthSelect.appendChild(option);
+            });
+        }
+
+        function populateDays() {
+            const selectedYear = parseInt(yearSelect.value);
+            const selectedMonth = parseInt(monthSelect.value);
+            const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+
+            daySelect.innerHTML = '';
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const option = document.createElement('option');
+                option.value = day;
+                option.textContent = day;
+                if (day === new Date().getDate() && 
+                    selectedYear === new Date().getFullYear() && 
+                    selectedMonth === new Date().getMonth()) {
+                    option.selected = true;
+                }
+                daySelect.appendChild(option);
+            }
+        }
+
+        function populateHoursAndMinutes() {
+            for (let hour = 0; hour < 24; hour++) {
+                const option = document.createElement('option');
+                option.value = hour;
+                option.textContent = String(hour).padStart(2, '0');
+                if (hour === new Date().getHours()) option.selected = true;
+                hourSelect.appendChild(option);
+            }
+
+            for (let minute = 0; minute < 60; minute++) {
+                const option = document.createElement('option');
+                option.value = minute;
+                option.textContent = String(minute).padStart(2, '0');
+                if (minute === new Date().getMinutes()) option.selected = true;
+                minuteSelect.appendChild(option);
+            }
+        }
+
+        yearSelect.addEventListener('change', populateDays);
+        monthSelect.addEventListener('change', populateDays);
+
+        populateYears();
+        populateMonths();
+        populateDays();
+        populateHoursAndMinutes();
+
+        // Add a new task
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const taskText = taskInput.value.trim();
+            const selectedYear = yearSelect.value;
+            const selectedMonth = monthSelect.options[monthSelect.selectedIndex].text;
+            const selectedDay = daySelect.value;
+            const selectedHour = hourSelect.value;
+            const selectedMinute = minuteSelect.value;
+            const repeatOption = document.getElementById('repeatSelect').value;
+
+            if (taskText === "") {
+                alert("Please enter a task.");
+                return;
+            }
+
+            const taskList = document.getElementById('taskList');
+
+            const li = document.createElement('li');
+            const taskSpan = document.createElement('span');
+            taskSpan.textContent = `${taskText} - ${selectedMonth} ${selectedDay}, ${selectedYear} at ${selectedHour}:${selectedMinute} (${repeatOption})`;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = "Delete";
+            deleteBtn.onclick = () => taskList.removeChild(li);
+
+            li.appendChild(taskSpan);
+            li.appendChild(deleteBtn);
+
+            taskList.appendChild(li);
+
+            taskInput.value = "";
+        }
+    </script>
+</body>
+</html>
